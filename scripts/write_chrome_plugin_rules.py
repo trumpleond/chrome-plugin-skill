@@ -69,6 +69,50 @@ RULES = """# 浏览器插件开发 AI 通用约束规则
 
 如果用户只是说“完成”“实现”“修复”“改好”，只能修改文件、运行检查、总结 diff 和测试结果，不能主动提交。
 
+## 项目记忆系统
+
+把规则文件当成 AI 的“入职手册”，把 `docs/` 当成项目长期记忆。
+
+如果项目中存在以下目录或文件，开始任务前必须优先读取：
+
+```text
+docs/context/
+docs/lessons_learned.md
+docs/evolution/
+```
+
+推荐结构：
+
+```text
+docs/
+  context/
+    chrome_extension_overview.md
+    tech_stack.md
+    release_checklist.md
+  evolution/
+    001_initial_setup.md
+  lessons_learned.md
+```
+
+开发新功能前：
+
+1. 读取 `docs/context/` 了解长期背景、技术栈、权限策略和发布要求。
+2. 读取 `docs/lessons_learned.md`，避免重复犯错。
+3. 给出计划后再修改代码。
+
+任务完成后，如果用户没有禁止写文档，应提醒用户是否需要沉淀本次变更；如果用户要求沉淀，则在 `docs/evolution/` 下新增一份变更记录，并把可复用经验追加到 `docs/lessons_learned.md`。
+
+Evolution 文档建议包含：
+
+```text
+Context: 为什么要做这个？
+Decision: 为什么选择这个方案？
+Design: 具体设计和影响范围是什么？
+Verification: 如何验证功能正常？
+Review Risk: 对插件市场审核有什么影响？
+Reflection: 本次有什么坑、教训或后续要记住的点？
+```
+
 ## Manifest 规则
 
 默认使用 Manifest V3。
@@ -399,6 +443,127 @@ TARGETS = {
 }
 
 
+DOC_TEMPLATES = {
+    "docs/context/chrome_extension_overview.md": """# Chrome Extension Overview
+
+## Product Goal
+
+记录这个浏览器插件解决什么问题、目标用户是谁、哪些行为属于明确不做。
+
+## Extension Architecture
+
+- Manifest version:
+- Popup entry:
+- Options page:
+- Background service worker:
+- Content scripts:
+- Storage strategy:
+- External APIs:
+
+## Permission Policy
+
+记录每个 `permissions` / `host_permissions` 的用途、必要性和审核解释。
+
+| Permission | Reason | Alternative Considered | Review Note |
+|---|---|---|---|
+|  |  |  |  |
+
+## Privacy Policy Notes
+
+记录插件是否读取、保存或上传用户数据。
+
+## i18n Notes
+
+记录默认语言、支持语言、文案存放位置和新增语言时的规则。
+""",
+    "docs/context/tech_stack.md": """# Tech Stack
+
+## Runtime
+
+- Browser targets: Chrome / Edge / Firefox
+- Manifest: V3
+- Language:
+- Framework:
+- Build tool:
+- Package manager:
+
+## Code Style
+
+记录命名、目录结构、状态管理、消息通信、错误处理和测试约定。
+
+## Important Commands
+
+```powershell
+# install
+
+# dev
+
+# build
+
+# test
+```
+""",
+    "docs/context/release_checklist.md": """# Extension Release Checklist
+
+## Before Packaging
+
+- [ ] `manifest.json` 权限最小化
+- [ ] 没有不必要的 `<all_urls>`
+- [ ] 没有远程执行代码
+- [ ] 没有测试文件、调试日志或密钥
+- [ ] 隐私政策覆盖实际数据行为
+- [ ] 商店描述、截图、权限说明与真实功能一致
+- [ ] 如需登录，准备测试账号
+- [ ] 敏感权限准备审核备注
+
+## Review Notes
+
+记录提交插件市场时要给审核人员看的说明。
+""",
+    "docs/lessons_learned.md": """# Lessons Learned
+
+记录本项目开发中已经踩过的坑、审核风险、浏览器兼容问题和以后必须遵守的经验。
+
+## Template
+
+```text
+Date:
+Context:
+Lesson:
+Future Rule:
+```
+""",
+    "docs/evolution/001_initial_setup.md": """# 001 Initial Setup
+
+## Context
+
+初始化浏览器插件项目的 AI 规则和项目记忆系统。
+
+## Decision
+
+使用规则文件约束 AI 行为，并使用 `docs/context`、`docs/evolution`、`docs/lessons_learned.md` 沉淀项目知识。
+
+## Design
+
+- `docs/context`: 长期背景、技术栈、权限策略、发布清单
+- `docs/evolution`: 每次重要变更的决策记录
+- `docs/lessons_learned.md`: 可复用教训和避坑规则
+
+## Verification
+
+确认 AI 规则文件和 docs 模板已经生成。
+
+## Review Risk
+
+无直接插件市场审核风险。
+
+## Reflection
+
+后续每个重要功能完成后，都应考虑是否新增 evolution 记录和 lessons learned。
+""",
+}
+
+
 def managed_block() -> str:
     return f"{START}\n{RULES.rstrip()}\n{END}\n"
 
@@ -429,6 +594,20 @@ def update_file(path: Path, force: bool) -> str:
     return "appended"
 
 
+def create_doc_templates(root: Path, force_docs: bool) -> list[tuple[str, Path]]:
+    results = []
+    for relative, content in DOC_TEMPLATES.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        existed = path.exists()
+        if existed and not force_docs:
+            results.append(("exists", path))
+            continue
+        write_utf8(path, content)
+        results.append(("overwritten" if existed else "created", path))
+    return results
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Write Chrome plugin AI rule files.")
     parser.add_argument("--target", default=".", help="Project directory to write rules into.")
@@ -440,6 +619,8 @@ def parse_args() -> argparse.Namespace:
         help="Rule files to generate.",
     )
     parser.add_argument("--force", action="store_true", help="Overwrite target files instead of updating managed blocks.")
+    parser.add_argument("--with-docs", action="store_true", help="Also scaffold docs/context, docs/evolution, and lessons learned templates.")
+    parser.add_argument("--force-docs", action="store_true", help="Overwrite docs templates when used with --with-docs.")
     return parser.parse_args()
 
 
@@ -452,6 +633,10 @@ def main() -> int:
         relative = TARGETS[target]
         status = update_file(root / relative, args.force)
         print(f"{status}: {root / relative}")
+
+    if args.with_docs:
+        for status, path in create_doc_templates(root, args.force_docs):
+            print(f"{status}: {path}")
 
     return 0
 
