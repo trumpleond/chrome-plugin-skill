@@ -29,6 +29,7 @@ The generated rules include:
 - Prefer local processing and privacy minimization.
 - Do not remotely load or execute extension code.
 - Design plugin text for Chinese / English and future i18n expansion.
+- Consider store-search keywords for extension names and descriptions without misleading users or keyword stuffing.
 - Read `docs/context` and `docs/lessons_learned.md` before coding when present.
 - Record important decisions in `docs/evolution` when project memory is requested.
 - Report test steps and extension-store review risk after each change.

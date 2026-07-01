@@ -73,6 +73,8 @@ RULES = """# 浏览器插件开发 AI 通用约束规则
 
 把规则文件当成 AI 的“入职手册”，把 `docs/` 当成项目长期记忆。
 
+记忆宫殿必须短小精炼，默认使用中文。不要写长篇大论，只记录能帮助下一次开发少走弯路的信息。
+
 如果项目中存在以下目录或文件，开始任务前必须优先读取：
 
 ```text
@@ -100,18 +102,20 @@ docs/
 2. 读取 `docs/lessons_learned.md`，避免重复犯错。
 3. 给出计划后再修改代码。
 
-任务完成后，如果用户没有禁止写文档，应提醒用户是否需要沉淀本次变更；如果用户要求沉淀，则在 `docs/evolution/` 下新增一份变更记录，并把可复用经验追加到 `docs/lessons_learned.md`。
+任务完成后，如果用户没有禁止写文档，应提醒用户是否需要沉淀本次变更；如果用户要求沉淀，则在 `docs/evolution/` 下新增一份简短变更记录，并把可复用经验追加到 `docs/lessons_learned.md`。
 
 Evolution 文档建议包含：
 
 ```text
-Context: 为什么要做这个？
-Decision: 为什么选择这个方案？
-Design: 具体设计和影响范围是什么？
-Verification: 如何验证功能正常？
-Review Risk: 对插件市场审核有什么影响？
-Reflection: 本次有什么坑、教训或后续要记住的点？
+背景：为什么做？
+决策：选了什么方案？
+影响：改了哪些关键点？
+验证：怎么确认可用？
+风险：权限/隐私/审核是否变化？
+经验：下次要记住什么？
 ```
+
+每项 1 到 3 句话即可。
 
 ## Manifest 规则
 
@@ -329,6 +333,28 @@ _locales/en/messages.json
 
 插件 UI、popup 文案、商店描述、权限说明必须清楚、正向、可解释。
 
+插件名称、短描述、商店描述要兼顾插件市场搜索排名。
+
+命名和描述必须：
+
+- 包含用户会搜索的核心关键词
+- 清楚表达插件主要功能
+- 与真实功能一致
+- 避免关键词堆砌
+- 避免夸大、误导或灰色用途表达
+- 中英文文案都要考虑搜索关键词
+
+新增或修改商店文案前，应先列出：
+
+```text
+核心关键词：
+中文名称候选：
+英文名称候选：
+中文短描述：
+英文短描述：
+审核风险：
+```
+
 推荐强调：
 
 ```text
@@ -444,122 +470,136 @@ TARGETS = {
 
 
 DOC_TEMPLATES = {
-    "docs/context/chrome_extension_overview.md": """# Chrome Extension Overview
+    "docs/context/chrome_extension_overview.md": """# 插件概览
 
-## Product Goal
+> 短小精炼。只写 AI 下次开发必须知道的事实。
 
-记录这个浏览器插件解决什么问题、目标用户是谁、哪些行为属于明确不做。
+## 目标
 
-## Extension Architecture
+- 插件用途：
+- 目标用户：
+- 明确不做：
 
-- Manifest version:
-- Popup entry:
-- Options page:
-- Background service worker:
-- Content scripts:
-- Storage strategy:
-- External APIs:
+## 结构
 
-## Permission Policy
+- Manifest：
+- Popup：
+- Background：
+- Content script：
+- Storage：
 
-记录每个 `permissions` / `host_permissions` 的用途、必要性和审核解释。
+## 权限
 
-| Permission | Reason | Alternative Considered | Review Note |
-|---|---|---|---|
-|  |  |  |  |
+| 权限 | 用途 | 审核说明 |
+|---|---|---|
+|  |  |  |
 
-## Privacy Policy Notes
+## 隐私
 
-记录插件是否读取、保存或上传用户数据。
+- 本地处理：
+- 会上传的数据：
+- 不采集的数据：
 
-## i18n Notes
+## 多语言
 
-记录默认语言、支持语言、文案存放位置和新增语言时的规则。
+- 默认语言：
+- 已支持：
+- 文案位置：
+
+## 商店关键词
+
+- 中文关键词：
+- 英文关键词：
+- 名称/描述注意：
 """,
-    "docs/context/tech_stack.md": """# Tech Stack
+    "docs/context/tech_stack.md": """# 技术栈
 
-## Runtime
+> 只记录会影响开发决策的信息。
 
-- Browser targets: Chrome / Edge / Firefox
-- Manifest: V3
-- Language:
-- Framework:
-- Build tool:
-- Package manager:
+## 基础
 
-## Code Style
+- 浏览器：
+- Manifest：V3
+- 语言：
+- 框架：
+- 构建工具：
+- 包管理：
 
-记录命名、目录结构、状态管理、消息通信、错误处理和测试约定。
+## 约定
 
-## Important Commands
+- 目录结构：
+- 状态存储：
+- 消息通信：
+- 测试方式：
+
+## 常用命令
 
 ```powershell
-# install
-
-# dev
-
-# build
-
-# test
+# 安装：
+# 开发：
+# 构建：
+# 测试：
 ```
 """,
-    "docs/context/release_checklist.md": """# Extension Release Checklist
+    "docs/context/release_checklist.md": """# 发布清单
 
-## Before Packaging
+> 发布前快速扫一遍。
 
-- [ ] `manifest.json` 权限最小化
+- [ ] 权限最小化
 - [ ] 没有不必要的 `<all_urls>`
 - [ ] 没有远程执行代码
-- [ ] 没有测试文件、调试日志或密钥
-- [ ] 隐私政策覆盖实际数据行为
-- [ ] 商店描述、截图、权限说明与真实功能一致
-- [ ] 如需登录，准备测试账号
+- [ ] 没有密钥、测试文件、调试日志
+- [ ] 隐私政策覆盖真实行为
+- [ ] 商店描述和截图不误导
+- [ ] 名称和描述包含核心搜索关键词
+- [ ] 没有关键词堆砌或夸大宣传
 - [ ] 敏感权限准备审核备注
+- [ ] 如需登录，已准备测试账号
 
-## Review Notes
+## 审核备注
 
-记录提交插件市场时要给审核人员看的说明。
+- 
 """,
-    "docs/lessons_learned.md": """# Lessons Learned
+    "docs/lessons_learned.md": """# 经验教训
 
-记录本项目开发中已经踩过的坑、审核风险、浏览器兼容问题和以后必须遵守的经验。
+> 只记录以后能避坑的结论。每条尽量不超过 3 行。
 
-## Template
+## 记录模板
 
 ```text
-Date:
-Context:
-Lesson:
-Future Rule:
+日期：
+场景：
+教训：
+以后规则：
 ```
 """,
-    "docs/evolution/001_initial_setup.md": """# 001 Initial Setup
+    "docs/evolution/001_initial_setup.md": """# 001 初始化项目记忆
 
-## Context
+## 背景
 
-初始化浏览器插件项目的 AI 规则和项目记忆系统。
+为浏览器插件项目加入 AI 规则和短文档记忆。
 
-## Decision
+## 决策
 
 使用规则文件约束 AI 行为，并使用 `docs/context`、`docs/evolution`、`docs/lessons_learned.md` 沉淀项目知识。
 
-## Design
+## 影响
 
-- `docs/context`: 长期背景、技术栈、权限策略、发布清单
-- `docs/evolution`: 每次重要变更的决策记录
-- `docs/lessons_learned.md`: 可复用教训和避坑规则
+- `docs/context`：长期事实
+- `docs/evolution`：重要变更
+- `docs/lessons_learned.md`：避坑经验
 
-## Verification
+## 验证
 
 确认 AI 规则文件和 docs 模板已经生成。
 
-## Review Risk
+## 风险
 
 无直接插件市场审核风险。
 
-## Reflection
+## 经验
 
-后续每个重要功能完成后，都应考虑是否新增 evolution 记录和 lessons learned。
+记忆宫殿要短小精炼，中文优先，只写下次开发有用的信息。
 """,
 }
 
