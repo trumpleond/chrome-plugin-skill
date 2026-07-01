@@ -1,0 +1,3 @@
+display_name: Chrome Plugin Rules
+short_description: Generate AI rule files for browser extension development.
+default_prompt: Write Chrome/Edge/Firefox plugin development AI constraints into the current project for Codex, Claude, Cursor, and Copilot.
